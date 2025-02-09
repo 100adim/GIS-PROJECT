@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>EV Cars Charging</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        #map {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        #sidebar {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background-color: #ffffff;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            z-index: 1000;
+        }
+
+        .search-bar input,
+        .search-bar select {
+            padding: 8px;
+            margin-right: 5px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .search-bar button {
+            padding: 8px 15px;
+            font-size: 14px;
+            background-color: #0a509b;
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <div id="sidebar">
+        <h3>Charging Station Map</h3>
+        <div class="search-bar">
+            <input type="text" id="location-input" placeholder="Search by city name">
+            <select id="plug-type">
+                <option value="">All Plug Types</option>
+                <option value="Type1">Type 1</option>
+                <option value="Type2">Type 2</option>
+                <option value="CCS">CCS</option>
+            </select>
+            <button onclick="searchStations()">Search</button>
+        </div>
+        <ul>
+            <li><span style="color: green;">●</span> Available Station</li>
+            <li><span style="color: orange;">●</span> Busy Station</li>
+            <li><span style="color: red;">●</span> Out of Service</li>
+        </ul>
+    </div>
+
+    <script>
+        // Create the map with a central location (Israel)
+        var map = L.map('map').setView([31.0461, 34.8516], 8);
+
+        // Add a map layer using OpenStreetMap
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Function to get and display user's current location
+        function showCurrentLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function (position) {
+                    const userLat = position.coords.latitude;
+                    const userLon = position.coords.longitude;
+
+                    // Add a marker for the user's location
+                    L.marker([userLat, userLon], {
+                        icon: L.icon({
+                            iconUrl: 'picture.png', // שומר על שם הקובץ שלך
+        iconSize: [50, 30], // יותר רחב ופרופורציונלי
+        iconAnchor: [25, 15], // מרכז החץ כך שהוא מצביע נכון
+        popupAnchor: [0, -15], // שהתיבה תופיע בדיוק מעל
+        shadowSize: [0, 0] // ללא צל
+                        })
+                    }).addTo(map)
+                        .bindPopup('You are here!')
+                        .openPopup();
+
+                    // Center the map on the user's location
+                    map.setView([userLat, userLon], 13);
+                }, function (error) {
+                    alert("Unable to retrieve your location. Please allow location access.");
+                });
+            } else {
+                alert("Geolocation is not supported by your browser.");
+            }
+        }
+
+        // Show user's location when the map loads
+        showCurrentLocation();
+
+        // Function to get all stations
+        function getAllStations() {
+            return [
+                { name: "Redesign JTLV East", city: "Kiryat Ata", lat: 32.809, lon: 35.088, status: "Available", plugType: "Type1" },
+                { name: "Hagalil Center", city: "Rosh Pina", lat: 32.968, lon: 35.526, status: "Busy", plugType: "Type2" },
+                { name: "Tahana 46", city: "Binyamina", lat: 32.520, lon: 34.946, status: "Out of Service", plugType: "CCS" },
+                { name: "Lev Hamifratz Mall", city: "Haifa", lat: 32.793, lon: 34.974, status: "Available", plugType: "Type1" },
+                { name: "MATAM Haifa Building 25", city: "Haifa", lat: 32.762, lon: 34.967, status: "Busy", plugType: "Type2" },
+                { name: "MATAM Haifa Parking A", city: "Haifa", lat: 32.765, lon: 34.965, status: "Out of Service", plugType: "CCS" },
+                { name: "Phillips External Parking", city: "Haifa", lat: 32.768, lon: 34.970, status: "Available", plugType: "Type1" },
+                { name: "Kadma Hotel", city: "Tirat Carmel", lat: 32.763, lon: 34.950, status: "Busy", plugType: "CCS" },
+                { name: "Shomrat Mall", city: "Afula", lat: 32.612, lon: 35.290, status: "Out of Service", plugType: "Type2" },
+                { name: "IKEA Netanya", city: "Netanya", lat: 32.325, lon: 34.859, status: "Available", plugType: "Type1" },
+                { name: "Herzliya Bay", city: "Herzliya", lat: 32.166, lon: 34.843, status: "Busy", plugType: "Type2" },
+                { name: "TLV Mall", city: "Tel Aviv", lat: 32.070, lon: 34.789, status: "Out of Service", plugType: "CCS" },
+                { name: "Bat Yam Station", city: "Bat Yam", lat: 32.017, lon: 34.752, status: "Available", plugType: "Type1" },
+                { name: "Beer Sheva Station 1", city: "Beer Sheva", lat: 31.245, lon: 34.793, status: "Busy", plugType: "Type2" },
+                { name: "Modiin Ispro Center", city: "Modiin", lat: 31.896, lon: 34.966, status: "Out of Service", plugType: "CCS" },
+                { name: "Friendly Mall", city: "Holon", lat: 32.013, lon: 34.782, status: "Available", plugType: "Type1" },
+                { name: "Rehovot Science Park", city: "Rehovot", lat: 31.894, lon: 34.811, status: "Busy", plugType: "Type2" },
+                { name: "Eilat Mall", city: "Eilat", lat: 29.555, lon: 34.951, status: "Out of Service", plugType: "CCS" },
+                { name: "Dead Sea Mall", city: "Dead Sea", lat: 31.199, lon: 35.364, status: "Available", plugType: "Type1" },
+                { name: "Sheba Medical Center", city: "Ramat Gan", lat: 32.067, lon: 34.824, status: "Busy", plugType: "CCS" },
+                { name: "Givataim Mall", city: "Givataim", lat: 32.072, lon: 34.812, status: "Available", plugType: "Type1" },
+                { name: "Kiryat Ono Mall", city: "Kiryat Ono", lat: 32.063, lon: 34.853, status: "Out of Service", plugType: "CCS" },
+                { name: "Petah Tikva Stadium", city: "Petah Tikva", lat: 32.092, lon: 34.862, status: "Busy", plugType: "Type2" },
+                { name: "Raanana Park", city: "Raanana", lat: 32.184, lon: 34.879, status: "Available", plugType: "Type1" },{ name: "Yes Planet Industrial Zone", city: "Be'er Sheva", lat: 31.252, lon: 34.791, status: "Available", plugType: "Type1" },
+                { name: "Gav Yam Be'er Sheva", city: "Be'er Sheva", lat: 31.247, lon: 34.796, status: "Busy", plugType: "Type2" },
+                { name: "Azorim Negev Central Site", city: "Be'er Sheva", lat: 31.249, lon: 34.796, status: "Out of Service", plugType: "CCS" },
+                { name: "Friendly Mall", city: "Gan Yavne", lat: 31.787, lon: 34.703, status: "Available", plugType: "Type1" },
+                { name: "Isrotel Hotel (Guests Only)", city: "Ein Bokek", lat: 31.198, lon: 35.360, status: "Busy", plugType: "Type2" },
+                { name: "Dead Sea Mall", city: "Dead Sea", lat: 31.200, lon: 35.363, status: "Available", plugType: "Type1" },
+                { name: "Bnei Re'em Junction", city: "Regional Council Yoav", lat: 31.781, lon: 34.762, status: "Available", plugType: "Type1" },
+                { name: "Beresheet Hotel (Guests Only)", city: "Mitzpe Ramon", lat: 30.610, lon: 34.801, status: "Busy", plugType: "CCS" },
+                { name: "Globus Center JTLV", city: "Netivot", lat: 31.418, lon: 34.593, status: "Available", plugType: "Type1" },
+                { name: "Mahsanei HaShuk", city: "Ein Yahav", lat: 30.685, lon: 35.253, status: "Out of Service", plugType: "Type2" },
+                { name: "Yes Planet Shopping Center", city: "Kiryat Gat", lat: 31.610, lon: 34.774, status: "Available", plugType: "Type1" },
+                { name: "Country Club Barnea", city: "Ashkelon", lat: 31.673, lon: 34.566, status: "Busy", plugType: "CCS" },
+                { name: "Royal Beach Hotel (Guests Only)", city: "Eilat", lat: 29.548, lon: 34.964, status: "Available", plugType: "Type1" },
+                { name: "Fattal Herods Palace (Guests Only)", city: "Eilat", lat: 29.552, lon: 34.963, status: "Busy", plugType: "Type2" },
+                { name: "Herods Boutique Hotel (Guests Only)", city: "Eilat", lat: 29.550, lon: 34.964, status: "Out of Service", plugType: "CCS" },
+                { name: "Leonardo Club Hotel (Guests Only)", city: "Eilat", lat: 29.556, lon: 34.954, status: "Available", plugType: "Type1" },
+                { name: "Leonardo Plaza Hotel (Guests Only)", city: "Eilat", lat: 29.555, lon: 34.954, status: "Busy", plugType: "Type2" },
+                { name: "U Magic Palace Hotel (Guests Only)", city: "Eilat", lat: 29.556, lon: 34.955, status: "Available", plugType: "Type1" },
+                { name: "King Solomon Hotel (Guests Only)", city: "Eilat", lat: 29.557, lon: 34.959, status: "Busy", plugType: "CCS" },
+                { name: "Isrotel Riviera Hotel (Guests Only)", city: "Eilat", lat: 29.556, lon: 34.960, status: "Available", plugType: "Type1" },
+                { name: "Royal Garden Hotel (Guests Only)", city: "Eilat", lat: 29.558, lon: 34.961, status: "Busy", plugType: "Type2" },
+                { name: "Agamim Hotel (Guests Only)", city: "Eilat", lat: 29.556, lon: 34.960, status: "Available", plugType: "Type1" },
+                { name: "U Coral Beach Club (Guests Only)", city: "Eilat", lat: 29.513, lon: 34.920, status: "Out of Service", plugType: "CCS" },
+                { name: "U Sunrise Club Hotel (Guests Only)", city: "Eilat", lat: 29.510, lon: 34.913, status: "Available", plugType: "Type1" },
+                { name: "Sheba Medical Center Central Parking", city: "Ramat Gan", lat: 32.080, lon: 34.845, status: "Busy", plugType: "CCS" },
+                { name: "Mika Gas Station (Sonol)", city: "Rehovot", lat: 31.905, lon: 34.818, status: "Available", plugType: "Type1" },
+                { name: "Arlozorov Parking (Ahuzat HaHof)", city: "Tel Aviv", lat: 32.085, lon: 34.782, status: "Available", plugType: "Type1" },
+                { name: "G Mall Mikado", city: "Tel Aviv", lat: 32.124, lon: 34.799, status: "Busy", plugType: "Type2" },
+                { name: "G Mall Tzameret", city: "Tel Aviv", lat: 32.082, lon: 34.789, status: "Available", plugType: "Type1" },
+                { name: "Argaman 18", city: "Rishon LeZion", lat: 31.971, lon: 34.789, status: "Available", plugType: "AC" },
+                { name: "Beit Maccabi", city: "Rishon LeZion", lat: 31.962, lon: 34.805, status: "Available", plugType: "AC" },
+                { name: "Derech Yitzhak Ben Zvi", city: "Rishon LeZion", lat: 31.964, lon: 34.796, status: "Available", plugType: "DC" },
+                { name: "HaCarmel 23", city: "Rishon LeZion", lat: 31.960, lon: 34.800, status: "Available", plugType: "DC" },
+                { name: "HaTizmoret 12", city: "Rishon LeZion", lat: 31.970, lon: 34.804, status: "Available", plugType: "AC" },
+                { name: "Zabotinsky 61 - Outdoor Parking", city: "Rishon LeZion", lat: 31.959, lon: 34.799, status: "Available", plugType: "AC" },
+                { name: "Achi Dakar 1 - A Parking Near the Boardwalk", city: "Rishon LeZion", lat: 31.950, lon: 34.800, status: "Available", plugType: "AC" },
+                { name: "Bereshevsky 21", city: "Rishon LeZion", lat: 31.961, lon: 34.789, status: "Available", plugType: "AC" },
+                { name: "Azrieli Rishonim Train Parking (Fast)", city: "Rishon LeZion", lat: 31.967, lon: 34.797, status: "Available", plugType: "DC" },
+                { name: "Zedl Parking Floor -3", city: "Rishon LeZion", lat: 31.958, lon: 34.801, status: "Available", plugType: "AC" },
+                { name: "Yaldei Tehran 10", city: "Rishon LeZion", lat: 31.962, lon: 34.794, status: "Available", plugType: "DC" },
+                { name: "Rappaport 4-6", city: "Rishon LeZion", lat: 31.957, lon: 34.798, status: "Available", plugType: "AC" },
+                { name: "Levi Eshkol 4", city: "Rishon LeZion", lat: 31.960, lon: 34.795, status: "Available", plugType: "AC" },
+                { name: "Moshe Levi 18", city: "Rishon LeZion", lat: 31.963, lon: 34.796, status: "Available", plugType: "AC" },
+                { name: "Yigal Alon Community Center", city: "Rishon LeZion", lat: 31.968, lon: 34.799, status: "Available", plugType: "AC" },
+                { name: "Kramim Community Center", city: "Rishon LeZion", lat: 31.962, lon: 34.793, status: "Available", plugType: "AC" },
+                { name: "Gan Nachum Alley 26", city: "Rishon LeZion", lat: 31.959, lon: 34.796, status: "Available", plugType: "AC" },
+                { name: "Golden Mall", city: "Rishon LeZion", lat: 31.966, lon: 34.793, status: "Available", plugType: "DC" },
+                { name: "City Towers Mall", city: "Rishon LeZion", lat: 31.960, lon: 34.802, status: "Available", plugType: "AC" },
+                { name: "Rishonim Center", city: "Rishon LeZion", lat: 31.971, lon: 34.793, status: "Available", plugType: "AC" },
+                { name: "HaSahlav Street 11", city: "Rishon LeZion", lat: 31.965, lon: 34.799, status: "Available", plugType: "AC" },
+                { name: "Golda Meir Boulevard 21", city: "Rishon LeZion", lat: 31.960, lon: 34.797, status: "Available", plugType: "DC" },
+                { name: "Golda Meir Boulevard 3", city: "Rishon LeZion", lat: 31.961, lon: 34.796, status: "Available", plugType: "DC" },
+                { name: "Menachem Shlomo 5", city: "Modiin Illit", lat: 31.933, lon: 35.042, status: "Available", plugType: "Type2" },
+                { name: "BIG Mega Or Center", city: "Modiin", lat: 31.907, lon: 35.007, status: "Available", plugType: "Type2" },
+                { name: "Mega Or REIT1 Center", city: "Modiin", lat: 31.911, lon: 35.005, status: "Available", plugType: "Type2" },
+                { name: "Utopia Modiin", city: "Modiin", lat: 31.908, lon: 35.003, status: "Available", plugType: "Type2" },
+                { name: "Yishpro Center", city: "Modiin", lat: 31.902, lon: 35.005, status: "Available", plugType: "Type2" },
+                { name: "Sonol Shilat", city: "Modiin", lat: 31.907, lon: 34.993, status: "Available", plugType: "Type2" },
+                { name: "Azrieli Mall Modiin", city: "Modiin", lat: 31.908, lon: 35.004, status: "Available", plugType: "Type2" },
+                { name: "Assuta Hospital Ashdod", city: "Ashdod", lat: 31.796, lon: 34.662, status: "Available", plugType: "Type2" },
+                { name: "Dov Gur 9", city: "Ashdod", lat: 31.796, lon: 34.658, status: "Available", plugType: "Type2" },
+                { name: "Ashdod Municipality Parking", city: "Ashdod", lat: 31.800, lon: 34.644, status: "Available", plugType: "Type2" },
+                { name: "BIG Fashion Ashdod", city: "Ashdod", lat: 31.806, lon: 34.649, status: "Available", plugType: "Type2", operator: "Afcon", power: 22 },
+                { name: "Supercharger Kiryat Shmona", city: "Kiryat Shmona", lat: 33.209, lon: 35.573, status: "Available", plugType: "Type2", operator: "Tesla", power: 250 },
+                { name: "Sonol Yeruham", city: "Yeruham", lat: 30.987, lon: 34.931, status: "Available", plugType: "AC Type 2/ChaDeMo/CCS2", operator: "Sonol EVI", power: "Regular + Fast" }, 
+                { name: "Be'er Sheva-Sdom Road Industrial Zone", city: "Dimona", lat: 31.070, lon: 35.035, status: "Available", plugType: "AC Type 2", operator: "Paz Charge", power: "Ultra-Fast" },
+                { name: "Rabbi Eliezer Ben Hurkanus 6", city: "Lod", lat: 31.948, lon: 34.892, status: "Available", plugType: "AC Type 2", operator: "EV-Edge", power: "Regular" },
+                { name: "Supercharger Mitzpe Ramon", city: "Mitzpe Ramon", lat: 30.610, lon: 34.801, status: "Available", plugType: "AC Type 2/CCS2", operator: "Tesla", power: "Ultra-Fast" },
+                { name: "Beresheet Hotel", city: "Mitzpe Ramon", lat: 30.605, lon: 34.801, status: "Available", plugType: "AC Type 2", operator: "EV-Edge", power: "Regular" },
+                { name: "Park HaKramim", city: "Jerusalem", lat: 31.769, lon: 35.218, status: "Available", plugType: "AC Type 2", operator: "Tesla", power: "Ultra-Fast (3 Stations)" },
+                { name: "Supreme Court - Sha'ar Mishpat", city: "Jerusalem", lat: 31.778, lon: 35.204, status: "Available", plugType: "AC Type 2/ChaDeMo/CCS2", operator: "Sonol", power: "Regular + Fast (3 Stations)" },
+                { name: "Jerusalem Towers Parking", city: "Jerusalem", lat: 31.783, lon: 35.217, status: "Available", plugType: "AC Type 2", operator: "Afcon", power: "Regular (2 Stations)" },
+                { name: "Waldorf Astoria Hotel", city: "Jerusalem", lat: 31.776, lon: 35.221, status: "Available", plugType: "AC Type 2", operator: "Afcon", power: "Regular (4 Stations)" },
+                { name: "Lev Talpiot Mall (JTLV)", city: "Jerusalem", lat: 31.755, lon: 35.211, status: "Available", plugType: "AC Type 2", operator: "EV-Edge", power: "Regular (2 Stations)" },
+                { name: "Ramat Mall", city: "Jerusalem", lat: 31.810, lon: 35.207, status: "Available", plugType: "AC Type 2", operator: "EV-Edge", power: "Regular (2 Stations)" },
+                { name: "BIG Kiryat Shmona", city: "Kiryat Shmona", lat: 33.210, lon: 35.574, status: "Available", plugType: "Type2", operator: "Tesla", power: 250 },
+                { name: "Beit Shemesh Center", city: "Beit Shemesh", lat: 31.749, lon: 34.992, status: "Out of Service", plugType: "CCS" },
+                { name: "Nahal Dolev 19", city: "Beit Shemesh", lat: 31.749, lon: 34.988, status: "Available", plugType: "AC Type 2", operator: "N/A", power: "Regular (2 Stations)" },
+                { name: "Yeheskel HaNavi 24", city: "Beit Shemesh", lat: 31.750, lon: 34.986, status: "Available", plugType: "AC Type 2", operator: "N/A", power: "Regular (2 Stations)" },
+                { name: "Yitzhak Rabin 11", city: "Beit Shemesh", lat: 31.747, lon: 34.984, status: "Available", plugType: "AC Type 2", operator: "N/A", power: "Regular (2 Stations)" },
+                { name: "Yitzhak Rabin 21", city: "Beit Shemesh", lat: 31.748, lon: 34.983, status: "Available", plugType: "AC Type 2", operator: "N/A", power: "Regular (2 Stations)" },
+                { name: "Nahal Arugot 1", city: "Beit Shemesh", lat: 31.746, lon: 34.990, status: "Available", plugType: "AC Type 2", operator: "N/A", power: "Regular (2 Stations)" },
+                { name: "Herzl 9", city: "Beit Shemesh", lat: 31.744, lon: 34.991, status: "Available", plugType: "AC Type 2", operator: "N/A", power: "Regular (2 Stations)" },
+                { name: "Aba Naamat 2", city: "Beit Shemesh", lat: 31.743, lon: 34.992, status: "Available", plugType: "AC Type 2", operator: "N/A", power: "Regular (2 Stations)" },
+                { name: "Nahal Kishon 25", city: "Beit Shemesh", lat: 31.745, lon: 34.993, status: "Available", plugType: "AC Type 2", operator: "N/A", power: "Regular (2 Stations)" },
+                { name: "HaGefen 32", city: "Beit Shemesh", lat: 31.741, lon: 34.990, status: "Available", plugType: "AC Type 2", operator: "N/A", power: "Regular (2 Stations)" },
+            ];
+        }
+
+        // Initialize stations
+        const stations = getAllStations();
+
+        // Function to add markers to the map
+        // Function to add markers to the map
+function addMarkers(filteredStations) {
+    filteredStations.forEach(station => {
+        L.marker([station.lat, station.lon], {
+            icon: L.icon({
+                iconUrl: 'image.png', // קובץ האייקון
+                iconSize: [30, 30], // גודל האייקון
+                iconAnchor: [15, 15], // עיגון האייקון
+                popupAnchor: [0, -15], // מיקום תיבת המידע
+                shadowSize: [0, 0] // ללא צל
+            })
+        }).addTo(map).bindPopup(
+            `Station: ${station.name}<br>
+             City: ${station.city}<br>
+             Status: ${station.status}<br>
+             Plug Type: ${station.plugType}`
+        );
+    });
+}
+
+
+        // Function to search and filter stations
+        function searchStations() {
+            const city = document.getElementById('location-input').value.toLowerCase();
+            const plugType = document.getElementById('plug-type').value;
+
+            // Filter stations
+            const filteredStations = stations.filter(station =>
+                (!city || station.city.toLowerCase().includes(city)) &&
+                (!plugType || station.plugType === plugType)
+            );
+
+            // Clear existing markers
+            map.eachLayer(layer => {
+                if (layer instanceof L.Marker) {
+                    map.removeLayer(layer);
+                }
+            });
+
+            // Add filtered stations
+            addMarkers(filteredStations);
+        }
+
+        // Show all stations initially
+        addMarkers(stations);
+    </script>
+</body>
+</html>
