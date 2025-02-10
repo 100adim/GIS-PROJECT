@@ -63,57 +63,22 @@
                 <option value="Type1">Type 1</option>
                 <option value="Type2">Type 2</option>
                 <option value="CCS">CCS</option>
+                <option value="CHAdeMO">CHAdeMO</option>
+                <option value="Tesla">Tesla</option>
+                <option value="AC">AC</option>
+                <option value="DC">DC</option>
             </select>
             <button onclick="searchStations()">Search</button>
         </div>
-        <ul>
-            <li><span style="color: green;">●</span> Available Station</li>
-            <li><span style="color: orange;">●</span> Busy Station</li>
-            <li><span style="color: red;">●</span> Out of Service</li>
-        </ul>
     </div>
 
     <script>
-        // Create the map with a central location (Israel)
         var map = L.map('map').setView([31.0461, 34.8516], 8);
 
-        // Add a map layer using OpenStreetMap
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
 
-        // Function to get and display user's current location
-        function showCurrentLocation() {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(function (position) {
-                    const userLat = position.coords.latitude;
-                    const userLon = position.coords.longitude;
-
-                    // Add a marker for the user's location
-                    L.marker([userLat, userLon], {
-                        icon: L.icon({
-                            iconUrl: 'picture.png', // שומר על שם הקובץ שלך
-        iconSize: [50, 30], // יותר רחב ופרופורציונלי
-        iconAnchor: [25, 15], // מרכז החץ כך שהוא מצביע נכון
-        popupAnchor: [0, -15], // שהתיבה תופיע בדיוק מעל
-        shadowSize: [0, 0] // ללא צל
-                        })
-                    }).addTo(map)
-                        .bindPopup('You are here!')
-                        .openPopup();
-
-                    // Center the map on the user's location
-                    map.setView([userLat, userLon], 13);
-                }, function (error) {
-                    alert("Unable to retrieve your location. Please allow location access.");
-                });
-            } else {
-                alert("Geolocation is not supported by your browser.");
-            }
-        }
-
-        // Show user's location when the map loads
-        showCurrentLocation();
 
         // Function to get all stations
         function getAllStations() {
@@ -231,53 +196,34 @@
         }
 
         // Initialize stations
-        const stations = getAllStations();
+           const stations = getAllStations();
 
-        // Function to add markers to the map
-        // Function to add markers to the map
-function addMarkers(filteredStations) {
-    filteredStations.forEach(station => {
-        L.marker([station.lat, station.lon], {
-            icon: L.icon({
-                iconUrl: 'image.png', // קובץ האייקון
-                iconSize: [30, 30], // גודל האייקון
-                iconAnchor: [15, 15], // עיגון האייקון
-                popupAnchor: [0, -15], // מיקום תיבת המידע
-                shadowSize: [0, 0] // ללא צל
-            })
-        }).addTo(map).bindPopup(
-            `Station: ${station.name}<br>
-             City: ${station.city}<br>
-             Status: ${station.status}<br>
-             Plug Type: ${station.plugType}`
-        );
-    });
-}
+        function addMarkers(filteredStations) {
+            filteredStations.forEach(station => {
+                L.marker([station.lat, station.lon]).addTo(map).bindPopup(
+                    `Station: ${station.name}<br>City: ${station.city}<br>Status: ${station.status}<br>Plug Type: ${station.plugType}`
+                );
+            });
+        }
 
-
-        // Function to search and filter stations
         function searchStations() {
             const city = document.getElementById('location-input').value.toLowerCase();
             const plugType = document.getElementById('plug-type').value;
 
-            // Filter stations
             const filteredStations = stations.filter(station =>
                 (!city || station.city.toLowerCase().includes(city)) &&
                 (!plugType || station.plugType === plugType)
             );
 
-            // Clear existing markers
             map.eachLayer(layer => {
                 if (layer instanceof L.Marker) {
                     map.removeLayer(layer);
                 }
             });
 
-            // Add filtered stations
             addMarkers(filteredStations);
         }
 
-        // Show all stations initially
         addMarkers(stations);
     </script>
 </body>
