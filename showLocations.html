@@ -215,82 +215,65 @@
         }
 
         // Initialize stations
-        const stations = getAllStations();
+  const stations = getAllStations();
 
-        // Function to add markers to the map
-        // Function to add markers to the map
-function addMarkers(filteredStations) {
-    filteredStations.forEach(station => {
-        L.marker([station.lat, station.lon], {
-            icon: L.icon({
-                iconUrl: 'image.png', // קובץ האייקון
-                iconSize: [30, 30], // גודל האייקון
-                iconAnchor: [15, 15], // עיגון האייקון
-                popupAnchor: [0, -15], // מיקום תיבת המידע
-                shadowSize: [0, 0] // ללא צל
-            })
-        }).addTo(map).bindPopup(
-            `Station: ${station.name}<br>
-             City: ${station.city}<br>
-             Status: ${station.status}<br>
-             Plug Type: ${station.plugType}`
-        );
-    });
-}
-
-// Function to calculate the distance between two points (Haversine formula)
-function calculateDistance(lat1, lon1, lat2, lon2) {
-    const R = 6371; // Radius of the Earth in km
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-              Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c; // Distance in km
-}
-
-// Function to search and filter stations
-function searchStations() {
-    const city = document.getElementById('location-input').value.toLowerCase();
-    const plugType = document.getElementById('plug-type').value;
-    const distanceFilter = document.getElementById('distance-filter').value;
-
-    let userLocation = null;
-
-    // Try to get the user's location
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(function (position) {
-            userLocation = { lat: position.coords.latitude, lon: position.coords.longitude };
-
-            // Filter stations
-            const filteredStations = stations.filter(station => {
-                const distance = userLocation
-                    ? calculateDistance(userLocation.lat, userLocation.lon, station.lat, station.lon)
-                    : Infinity;
-                return (
-                    (!city || station.city.toLowerCase().includes(city)) &&
-                    (!plugType || station.plugType === plugType) &&
-                    (!distanceFilter || distance <= parseInt(distanceFilter))
+        function addMarkers(filteredStations) {
+            filteredStations.forEach(station => {
+                L.marker([station.lat, station.lon], {
+                    icon: L.icon({
+                        iconUrl: 'image.png',
+                        iconSize: [30, 30],
+                        iconAnchor: [15, 15],
+                        popupAnchor: [0, -15],
+                        shadowSize: [0, 0]
+                    })
+                }).addTo(map).bindPopup(
+                    `Station: ${station.name}<br>City: ${station.city}<br>Status: ${station.status}<br>Plug Type: ${station.plugType}`
                 );
             });
+        }
 
-            // Clear existing markers
-            map.eachLayer(layer => {
-                if (layer instanceof L.Marker) {
-                    map.removeLayer(layer);
-                }
-            });
+        function searchStations() {
+            const city = document.getElementById('location-input').value.toLowerCase();
+            const plugType = document.getElementById('plug-type').value;
+            const distanceFilter = document.getElementById('distance-filter').value;
 
-            // Add filtered stations
-            addMarkers(filteredStations);
-        });
-    } else {
-        alert("Geolocation is not supported by your browser.");
-    }
-}
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function (position) {
+                    const userLocation = { lat: position.coords.latitude, lon: position.coords.longitude };
 
-        // Show all stations initially
+                    const filteredStations = stations.filter(station => {
+                        const distance = calculateDistance(userLocation.lat, userLocation.lon, station.lat, station.lon);
+                        return (
+                            (!city || station.city.toLowerCase().includes(city)) &&
+                            (!plugType || station.plugType === plugType) &&
+                            (!distanceFilter || distance <= parseInt(distanceFilter))
+                        );
+                    });
+
+                    map.eachLayer(layer => {
+                        if (layer instanceof L.Marker) {
+                            map.removeLayer(layer);
+                        }
+                    });
+
+                    addMarkers(filteredStations);
+
+                    L.marker([userLocation.lat, userLocation.lon], {
+                        icon: L.icon({
+                            iconUrl: 'picture.png',
+                            iconSize: [50, 30],
+                            iconAnchor: [25, 15],
+                            popupAnchor: [0, -15],
+                            shadowSize: [0, 0]
+                        })
+                    }).addTo(map).bindPopup('You are here!').openPopup();
+                });
+            } else {
+                alert("Geolocation is not supported by your browser.");
+            }
+        }
+
         addMarkers(stations);
     </script>
 </body>
