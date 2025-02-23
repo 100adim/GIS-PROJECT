@@ -115,6 +115,7 @@
 
             if (username && password) {
                 localStorage.setItem(username, password);
+                alert("Registration successful! Please log in.");
                 closeModal('signup-modal');
                 openModal('login-modal');
             } else {
@@ -128,7 +129,7 @@
             const storedPassword = localStorage.getItem(username);
 
             if (storedPassword === password) {
-                window.location.href = "showLocations.html"; 
+                window.location.href = "showLocations.html";
             } else {
                 alert("Invalid username or password!");
             }
