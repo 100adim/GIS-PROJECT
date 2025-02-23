@@ -8,7 +8,6 @@
             margin: 0;
             font-family: Arial, sans-serif;
         }
-
         .bg {
             background-image: url("pic.jpg");
             height: 100%;
@@ -22,7 +21,6 @@
             text-align: center;
             padding: 20px;
         }
-
         .title-box, .content-box {
             background-color: #ffffff;
             padding: 20px;
@@ -31,27 +29,22 @@
             margin-bottom: 20px;
             max-width: 600px;
         }
-
         .title-box {
             margin-bottom: 10px;
         }
-
         h1 {
             color: #073b72;
             margin: 0;
         }
-
         p {
             color: #666;
             font-size: 14px;
             margin: 0;
         }
-
         .button-container {
             display: flex;
             gap: 15px;
         }
-
         button {
             font-size: 16px;
             padding: 12px 25px;
@@ -65,149 +58,82 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
             transition: background-color 0.3s, transform 0.2s;
         }
-
         button:hover {
             background-color: #002d5d;
             transform: translateY(-2px);
         }
-
-        /* Modal styles */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 350px;
-            background-color: #ffffff;
-            padding: 20px;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-            border-radius: 10px;
-            z-index: 2000;
-            text-align: center;
-        }
-
-        .modal h2 {
-            margin-bottom: 10px;
-            color: #333;
-        }
-
-        .modal input {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-
-        .modal button {
-            width: 100%;
-            background-color: #0a509b;
-            color: white;
-            padding: 10px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
-
-        .modal button:hover {
-            background-color: #002d5d;
-        }
-
-        .modal a {
-            display: block;
-            margin-top: 10px;
-            color: #0a509b;
-            text-decoration: none;
-        }
-
-        .modal a:hover {
-            text-decoration: underline;
-        }
-
-        .modal .close-btn {
-            margin-top: 10px;
-            background-color: #ccc;
-            color: #333;
-        }
     </style>
 </head>
 <body>
-
-<div class="bg">
-    <div class="title-box">
-        <h1>Electric Car Charging Locator</h1>
+    <div class="bg">
+        <div class="title-box">
+            <h1>Electric Car Charging Locator</h1>
+        </div>
+        <div class="content-box">
+            <p>Looking for a place to charge your electric car in Israel? Use our website to find the nearest charging stations and plan your trips with ease!</p>
+        </div>
+        <div class="button-container">
+            <button onclick="openModal('signup-modal')">Sign Up</button>
+            <button onclick="openModal('login-modal')">Log In</button>
+        </div>
     </div>
-    <div class="content-box">
-        <p>Looking for a place to charge your electric car in Israel? Use our website to find the nearest charging stations and plan your trips with ease!</p>
+
+    <!-- Sign Up Modal -->
+    <div id="signup-modal" class="modal">
+        <h2>Register</h2>
+        <p>Create a new account to start</p>
+        <input type="text" id="signup-username" placeholder="Username" autocomplete="off">
+        <input type="password" id="signup-password" placeholder="Password" autocomplete="new-password">
+        <button onclick="registerUser()">Register</button>
+        <a href="#" onclick="openModal('login-modal'); closeModal('signup-modal')">Already have an account? Sign in</a>
+        <button class="close-btn" onclick="closeModal('signup-modal')">Close</button>
     </div>
-    <div class="button-container">
-        <button onclick="openModal('signup-modal')">Sign Up</button>
-        <button onclick="openModal('login-modal')">Log In</button>
+
+    <!-- Log In Modal -->
+    <div id="login-modal" class="modal">
+        <h2>Sign In</h2>
+        <p>Welcome back! Please sign in to your account</p>
+        <input type="text" id="login-username" placeholder="Username" autocomplete="off">
+        <input type="password" id="login-password" placeholder="Password" autocomplete="off">
+        <button onclick="loginUser()">Sign In</button>
+        <a href="#" onclick="openModal('signup-modal'); closeModal('login-modal')">Don't have an account? Register now</a>
+        <button class="close-btn" onclick="closeModal('login-modal')">Close</button>
     </div>
-</div>
 
-<!-- Sign Up Modal -->
-<div id="signup-modal" class="modal">
-    <h2>Register</h2>
-    <p>Create a new account to start</p>
-    <input type="text" id="signup-username" placeholder="Username" autocomplete="off">
-    <input type="password" id="signup-password" placeholder="Password" autocomplete="new-password">
-    <button onclick="registerUser()">Register</button>
-    <a href="#" onclick="openModal('login-modal'); closeModal('signup-modal')">Already have an account? Sign in</a>
-    <button class="close-btn" onclick="closeModal('signup-modal')">Close</button>
-</div>
-
-<!-- Log In Modal -->
-<div id="login-modal" class="modal">
-    <h2>Sign In</h2>
-    <p>Welcome back! Please sign in to your account</p>
-    <input type="text" id="login-username" placeholder="Username" autocomplete="off">
-    <input type="password" id="login-password" placeholder="Password" autocomplete="off">
-    <button onclick="loginUser()">Sign In</button>
-    <a href="#" onclick="openModal('signup-modal'); closeModal('login-modal')">Don't have an account? Register now</a>
-    <button class="close-btn" onclick="closeModal('login-modal')">Close</button>
-</div>
-
-<script>
-    function openModal(modalId) {
-        document.getElementById(modalId).style.display = 'block';
-    }
-
-    function closeModal(modalId) {
-        document.getElementById(modalId).style.display = 'none';
-    }
-
-    function registerUser() {
-        const username = document.getElementById('signup-username').value;
-        const password = document.getElementById('signup-password').value;
-
-        if (username && password) {
-            // Save user to LocalStorage
-            localStorage.setItem(username, password);
-            alert("Registration successful! You can now log in.");
-            closeModal('signup-modal');
-            openModal('login-modal');
-        } else {
-            alert("Please fill in all fields!");
+    <script>
+        function openModal(modalId) {
+            document.getElementById(modalId).style.display = 'block';
         }
-    }
 
-    function loginUser() {
-        const username = document.getElementById('login-username').value;
-        const password = document.getElementById('login-password').value;
-
-        // Check if the username exists in LocalStorage
-        const storedPassword = localStorage.getItem(username);
-
-        if (storedPassword === password) {
-            alert("Login successful!");
-            window.location.href = "showLocations.html"; // Redirect to map page
-        } else {
-            alert("Invalid username or password!");
+        function closeModal(modalId) {
+            document.getElementById(modalId).style.display = 'none';
         }
-    }
-</script>
 
+        function registerUser() {
+            const username = document.getElementById('signup-username').value;
+            const password = document.getElementById('signup-password').value;
+
+            if (username && password) {
+                localStorage.setItem(username, password);
+                alert("Registration successful! Please log in.");
+                closeModal('signup-modal');
+                openModal('login-modal');
+            } else {
+                alert("Please fill in all fields!");
+            }
+        }
+
+        function loginUser() {
+            const username = document.getElementById('login-username').value;
+            const password = document.getElementById('login-password').value;
+            const storedPassword = localStorage.getItem(username);
+
+            if (storedPassword === password) {
+                window.location.href = "showLocations.html";
+            } else {
+                alert("Invalid username or password!");
+            }
+        }
+    </script>
 </body>
 </html>
