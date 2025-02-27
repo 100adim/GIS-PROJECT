@@ -71,6 +71,11 @@
             transform: translateY(-2px);
         }
 
+        /* הסתרת רשימת המשתמשים */
+        .users-container {
+            display: none;
+        }
+
         /* Modal styles */
         .modal {
             display: none;
@@ -130,28 +135,6 @@
             background-color: #ccc;
             color: #333;
         }
-
-        /* רשימת משתמשים */
-        .users-container {
-            margin-top: 20px;
-            padding: 10px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            max-width: 400px;
-            text-align: left;
-        }
-
-        #userList {
-            list-style: none;
-            padding: 0;
-        }
-
-        #userList li {
-            padding: 5px 0;
-            border-bottom: 1px solid #ddd;
-        }
-
     </style>
 </head>
 <body>
@@ -168,6 +151,7 @@
         <button onclick="openModal('login-modal')">Log In</button>
     </div>
 
+    <!-- רשימת משתמשים מוסתרת -->
     <div class="users-container">
         <h3>Registered Users:</h3>
         <ul id="userList"></ul>
@@ -207,7 +191,7 @@
         document.getElementById(modalId).style.display = 'none';
     }
 
-    // טוען את רשימת המשתמשים אוטומטית בעת טעינת הדף
+    // טעינת המשתמשים, אבל הרשימה מוסתרת בעיצוב
     document.addEventListener("DOMContentLoaded", fetchUsers);
 </script>
 
