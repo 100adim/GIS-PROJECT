@@ -1,25 +1,20 @@
-const GITHUB_USERNAME = "100adim"; 
+const GITHUB_USERNAME = "100adim";
 const REPO_NAME = "GIS-PROJECT";
 const FILE_PATH = "users.json";
+const GITHUB_TOKEN = "SDcttYsnerH1hzHYXoJsapjpC77Y1537c65G;
 
-// שימוש בטוקן בצורה בטוחה (אם יש `config.js`, אחרת משתמשים ב-Secrets של גיטאב)
-const GITHUB_TOKEN = typeof CONFIG !== "undefined" ? CONFIG.GITHUB_TOKEN : process.env.GITHUB_ACCESS_TOKEN;
-
-// 🚀 פונקציה שמביאה את רשימת המשתמשים מתוך `users.json`
 async function fetchUsers() {
     const apiUrl = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${REPO_NAME}/main/${FILE_PATH}`;
-
     try {
         const response = await fetch(apiUrl);
-        if (!response.ok) throw new Error("❌ שגיאה בטעינת המשתמשים");
+        if (!response.ok) throw new Error("Error fetching users");
         return await response.json();
     } catch (error) {
-        console.error("❌ שגיאה בטעינת המשתמשים:", error);
+        console.error("Error fetching users:", error);
         return [];
     }
 }
 
-// 🚀 פונקציה להצפנת סיסמאות ב-SHA256
 async function hashPassword(password) {
     const encoder = new TextEncoder();
     const data = encoder.encode(password);
@@ -27,19 +22,18 @@ async function hashPassword(password) {
     return Array.from(new Uint8Array(hashBuffer)).map(byte => byte.toString(16).padStart(2, "0")).join("");
 }
 
-// 🚀 פונקציה לרישום משתמש חדש
 async function registerUser() {
     const username = document.getElementById("signup-username").value.trim();
     const password = document.getElementById("signup-password").value.trim();
 
     if (!username || !password) {
-        alert("⚠ יש למלא את כל השדות!");
+        alert("Please fill all fields!");
         return;
     }
 
     let users = await fetchUsers();
     if (users.some(user => user.username === username)) {
-        alert("⚠ שם משתמש כבר קיים במערכת!");
+        alert("Username already exists!");
         return;
     }
 
@@ -47,25 +41,19 @@ async function registerUser() {
     users.push({ username, password: hashedPassword });
 
     await updateUsersFile(users);
-    alert("✅ ההרשמה בוצעה בהצלחה! ניתן להתחבר עכשיו.");
+    alert("Registration successful!");
     closeModal('signup-modal');
-    openModal('login-modal');
 }
 
-// 🚀 פונקציה לעדכון `users.json` בגיטאב
 async function updateUsersFile(users) {
-    console.log("🚀 מנסה לעדכן את users.json בגיט...");
-
     const apiUrl = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/${FILE_PATH}`;
 
     try {
         const response = await fetch(apiUrl, { headers: { Authorization: `token ${GITHUB_TOKEN}` } });
-        if (!response.ok) throw new Error("❌ שגיאה בשליפת הנתונים מ-GitHub");
+        if (!response.ok) throw new Error("Error retrieving GitHub file data");
 
         const fileData = await response.json();
-        console.log("📄 קובץ נמצא בגיט! ממשיך לעדכן...");
-
-        const updatedContent = btoa(JSON.stringify(users, null, 2));
+        const updatedContent = btoa(unescape(encodeURIComponent(JSON.stringify(users, null, 2))));
 
         const commitResponse = await fetch(apiUrl, {
             method: "PUT",
@@ -77,33 +65,30 @@ async function updateUsersFile(users) {
             })
         });
 
-        if (!commitResponse.ok) throw new Error("❌ שגיאה בעדכון המשתמשים בגיט");
-
-        console.log(`✅ המשתמש ${users[users.length - 1].username} נוסף בהצלחה!`);
+        if (!commitResponse.ok) throw new Error("Error updating users in GitHub");
+        console.log(`User ${users[users.length - 1].username} added successfully!`);
     } catch (error) {
-        console.error("❌ שגיאה בעדכון המשתמשים:", error);
+        console.error("Error updating users:", error);
     }
 }
 
-// 🚀 פונקציה להתחברות משתמשים
 async function loginUser() {
     const username = document.getElementById("login-username").value.trim();
     const password = document.getElementById("login-password").value.trim();
 
     let users = await fetchUsers();
-    const hashedPassword = await hashPassword(password); // הצפנת הסיסמה לפני בדיקה
+    const hashedPassword = await hashPassword(password);
     
     const user = users.find(user => user.username === username && user.password === hashedPassword);
     
     if (user) {
-        alert("✅ התחברת בהצלחה!");
+        alert("Login successful!");
         window.location.href = "showLocations.html";
     } else {
-        alert("❌ שם משתמש או סיסמה שגויים!");
+        alert("Incorrect username or password!");
     }
 }
 
-// 🚀 פונקציות להצגת חלונות ההרשמה/התחברות
 function openModal(modalId) {
     document.getElementById(modalId).style.display = 'block';
 }
@@ -112,5 +97,4 @@ function closeModal(modalId) {
     document.getElementById(modalId).style.display = 'none';
 }
 
-// 🚀 טוען את רשימת המשתמשים בעת טעינת הדף
 document.addEventListener("DOMContentLoaded", fetchUsers);
