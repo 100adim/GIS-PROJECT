@@ -1,11 +1,11 @@
-const GITHUB_USERNAME = "100adim";
+const GITHUB_USERNAME = "100adim"; 
 const REPO_NAME = "GIS-PROJECT";
 const FILE_PATH = "users.json";
 
-// שימוש בטוקן בצורה בטוחה
+// שימוש בטוקן בצורה בטוחה (אם יש `config.js`, אחרת משתמשים ב-Secrets של גיטאב)
 const GITHUB_TOKEN = typeof CONFIG !== "undefined" ? CONFIG.GITHUB_TOKEN : process.env.GITHUB_ACCESS_TOKEN;
 
-// פונקציה לקרוא משתמשים מ- GitHub
+// 🚀 פונקציה שמביאה את רשימת המשתמשים מתוך `users.json`
 async function fetchUsers() {
     const apiUrl = `https://raw.githubusercontent.com/${GITHUB_USERNAME}/${REPO_NAME}/main/${FILE_PATH}`;
 
@@ -14,13 +14,14 @@ async function fetchUsers() {
         const users = await response.json();
 
         const userList = document.getElementById("userList");
-        userList.innerHTML = ""; // ניקוי הרשימה הקיימת
-
-        users.forEach(user => {
-            let li = document.createElement("li");
-            li.textContent = user.username;
-            userList.appendChild(li);
-        });
+        if (userList) {
+            userList.innerHTML = ""; // ניקוי הרשימה הקיימת
+            users.forEach(user => {
+                let li = document.createElement("li");
+                li.textContent = user.username;
+                userList.appendChild(li);
+            });
+        }
 
         console.log("✅ רשימת המשתמשים נטענה:", users);
         return users;
@@ -30,7 +31,7 @@ async function fetchUsers() {
     }
 }
 
-// פונקציה להצפנת סיסמאות ב-SHA256
+// 🚀 פונקציה להצפנת סיסמאות ב-SHA256
 async function hashPassword(password) {
     const encoder = new TextEncoder();
     const data = encoder.encode(password);
@@ -39,7 +40,7 @@ async function hashPassword(password) {
     return hashArray.map(byte => byte.toString(16).padStart(2, "0")).join("");
 }
 
-// פונקציה להוספת משתמשים ל-`users.json`
+// 🚀 פונקציה לרישום משתמש חדש
 async function registerUser() {
     const username = document.getElementById("signup-username").value.trim();
     const password = document.getElementById("signup-password").value.trim();
@@ -66,8 +67,10 @@ async function registerUser() {
     openModal('login-modal');
 }
 
-// פונקציה לעדכון `users.json` בגיט
+// 🚀 פונקציה לעדכון `users.json` בגיטאב
 async function updateUsersFile(users) {
+    console.log("🚀 מנסה לעדכן את users.json בגיט...");
+
     const apiUrl = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/${FILE_PATH}`;
 
     try {
@@ -75,9 +78,11 @@ async function updateUsersFile(users) {
             headers: { Authorization: `token ${GITHUB_TOKEN}` }
         });
 
-        if (!response.ok) throw new Error("שגיאה בשליפת הנתונים מ-GitHub");
+        if (!response.ok) throw new Error("❌ שגיאה בשליפת הנתונים מ-GitHub");
 
         const fileData = await response.json();
+        console.log("📄 קובץ נמצא בגיט! ממשיך לעדכן...");
+
         const updatedContent = btoa(JSON.stringify(users, null, 2));
 
         const commitResponse = await fetch(apiUrl, {
@@ -93,14 +98,15 @@ async function updateUsersFile(users) {
             })
         });
 
-        if (!commitResponse.ok) throw new Error("שגיאה בעדכון המשתמשים בגיט");
+        if (!commitResponse.ok) throw new Error("❌ שגיאה בעדכון המשתמשים בגיט");
+
         console.log(`✅ המשתמש ${users[users.length - 1].username} נוסף בהצלחה!`);
     } catch (error) {
         console.error("❌ שגיאה בעדכון המשתמשים:", error);
     }
 }
 
-// פונקציה להתחברות משתמשים
+// 🚀 פונקציה להתחברות משתמשים
 async function loginUser() {
     const username = document.getElementById("login-username").value.trim();
     const password = document.getElementById("login-password").value.trim();
@@ -118,7 +124,7 @@ async function loginUser() {
     }
 }
 
-// פונקציות להצגת חלונות
+// 🚀 פונקציות להצגת חלונות ההרשמה/התחברות
 function openModal(modalId) {
     document.getElementById(modalId).style.display = 'block';
 }
@@ -126,3 +132,6 @@ function openModal(modalId) {
 function closeModal(modalId) {
     document.getElementById(modalId).style.display = 'none';
 }
+
+// 🚀 טוען את רשימת המשתמשים בעת טעינת הדף
+document.addEventListener("DOMContentLoaded", fetchUsers);
