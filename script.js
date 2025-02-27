@@ -11,20 +11,8 @@ async function fetchUsers() {
 
     try {
         const response = await fetch(apiUrl);
-        const users = await response.json();
-
-        const userList = document.getElementById("userList");
-        if (userList) {
-            userList.innerHTML = ""; // ניקוי הרשימה הקיימת
-            users.forEach(user => {
-                let li = document.createElement("li");
-                li.textContent = user.username;
-                userList.appendChild(li);
-            });
-        }
-
-        console.log("✅ רשימת המשתמשים נטענה:", users);
-        return users;
+        if (!response.ok) throw new Error("❌ שגיאה בטעינת המשתמשים");
+        return await response.json();
     } catch (error) {
         console.error("❌ שגיאה בטעינת המשתמשים:", error);
         return [];
@@ -36,8 +24,7 @@ async function hashPassword(password) {
     const encoder = new TextEncoder();
     const data = encoder.encode(password);
     const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(byte => byte.toString(16).padStart(2, "0")).join("");
+    return Array.from(new Uint8Array(hashBuffer)).map(byte => byte.toString(16).padStart(2, "0")).join("");
 }
 
 // 🚀 פונקציה לרישום משתמש חדש
@@ -51,8 +38,6 @@ async function registerUser() {
     }
 
     let users = await fetchUsers();
-
-    // בדיקה אם המשתמש כבר קיים
     if (users.some(user => user.username === username)) {
         alert("⚠ שם משתמש כבר קיים במערכת!");
         return;
@@ -74,10 +59,7 @@ async function updateUsersFile(users) {
     const apiUrl = `https://api.github.com/repos/${GITHUB_USERNAME}/${REPO_NAME}/contents/${FILE_PATH}`;
 
     try {
-        const response = await fetch(apiUrl, {
-            headers: { Authorization: `token ${GITHUB_TOKEN}` }
-        });
-
+        const response = await fetch(apiUrl, { headers: { Authorization: `token ${GITHUB_TOKEN}` } });
         if (!response.ok) throw new Error("❌ שגיאה בשליפת הנתונים מ-GitHub");
 
         const fileData = await response.json();
@@ -87,10 +69,7 @@ async function updateUsersFile(users) {
 
         const commitResponse = await fetch(apiUrl, {
             method: "PUT",
-            headers: {
-                Authorization: `token ${GITHUB_TOKEN}`,
-                "Content-Type": "application/json"
-            },
+            headers: { Authorization: `token ${GITHUB_TOKEN}`, "Content-Type": "application/json" },
             body: JSON.stringify({
                 message: `Added user ${users[users.length - 1].username}`,
                 content: updatedContent,
@@ -112,7 +91,7 @@ async function loginUser() {
     const password = document.getElementById("login-password").value.trim();
 
     let users = await fetchUsers();
-    const hashedPassword = await hashPassword(password);
+    const hashedPassword = await hashPassword(password); // הצפנת הסיסמה לפני בדיקה
     
     const user = users.find(user => user.username === username && user.password === hashedPassword);
     
